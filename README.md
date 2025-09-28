@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Instagram Stories (Next.js)
+
+A phased build of an Instagram Stories-style experience focused on mobile UX, fluid transitions, and client-side playback controls — implemented with Next.js App Router, Tailwind CSS v4 preview, and shadcn/ui foundations.
+
+## Stack
+- Next.js 15 (App Router, React 19, TypeScript)
+- Tailwind CSS v4 preview + shadcn/ui tokens
+- Lucide icons, clsx/tailwind-merge utilities
+
+## Feature Summary
+- Horizontally scrollable story rail with focus-visible states and lazy avatars
+- Story viewer with 9:16 framing, cross-fade image transitions, loading skeleton, and segmented progress bar
+- Auto-advance timer (5s) with hold-to-pause, manual navigation, and keyboard access (arrow keys + space)
+- Reduced-motion friendly: respects OS preference and falls back to minimal animations
+- External story data module for easy replacement with API or CMS data
 
 ## Getting Started
-
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+Open `http://localhost:3000` on a mobile viewport (or browser devtools device mode) for the intended experience.
+
+### Linting
+```bash
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project Structure
+```
+src/
+├─ app/
+│  ├─ page.tsx              → Server-rendered shell fetching stories
+│  ├─ layout.tsx            → Root layout + global fonts
+│  └─ globals.css           → Tailwind v4 + project animations
+├─ components/
+│  ├─ stories-experience.tsx → Client controller (state, timers, navigation)
+│  ├─ story-rail.tsx         → Scrollable avatar rail
+│  └─ story-viewer.tsx       → Story player with progress + controls
+└─ data/
+   └─ stories.ts            → Static story dataset & typings
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Roadmap / Next Steps
+1. Add swipe gesture recognition for touch devices (pointer events or a custom recognizer)
+2. Extend progress HUD for multi-slide stories per author
+3. Introduce integration tests around timer + navigation logic (e.g., Playwright)
+4. Prepare deployment (Vercel) and record requested Loom walkthrough
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Notes
+- All media is loaded from Unsplash via Next Image remote patterns; adjust `next.config.ts` if you swap data sources.
+- When recording the Loom demo, start with an explanation of the UI controls, then show auto-play, manual taps, and accessibility affordances.

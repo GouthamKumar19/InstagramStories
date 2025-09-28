@@ -16,6 +16,7 @@ export function StoriesExperience({ stories }: StoriesExperienceProps) {
   const availableStories = useMemo(() => stories ?? [], [stories]);
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [isManualPause, setIsManualPause] = useState(false);
   const [isStoryReady, setIsStoryReady] = useState(false);
   const [playbackProgress, setPlaybackProgress] = useState(0);
@@ -55,6 +56,7 @@ export function StoriesExperience({ stories }: StoriesExperienceProps) {
       const index = availableStories.findIndex((story) => story.id === storyId);
       if (index !== -1) {
         setActiveIndex(index);
+        setIsViewerOpen(false);
       }
     },
     [availableStories],
@@ -82,10 +84,11 @@ export function StoriesExperience({ stories }: StoriesExperienceProps) {
     setIsManualPause(false);
   }, []);
 
-  const isPlaybackPaused = isManualPause || !isStoryReady;
+  const isPlaybackPaused = !isViewerOpen || isManualPause || !isStoryReady;
 
   useEffect(() => {
     if (totalStories === 0) return;
+    if (!isViewerOpen) return;
     if (isPlaybackPaused) return;
 
     let animationFrame = 0;
@@ -116,29 +119,31 @@ export function StoriesExperience({ stories }: StoriesExperienceProps) {
         cancelAnimationFrame(animationFrame);
       }
     };
-  }, [goToNext, isPlaybackPaused, totalStories, activeIndex]);
+  }, [goToNext, isPlaybackPaused, totalStories, activeIndex, isViewerOpen]);
 
   return (
-    <section className="flex flex-1 flex-col gap-6">
+    <section className="flex flex-col gap-6">
       <StoryRail
         stories={availableStories}
         activeStoryId={activeStory?.id}
         onStorySelect={selectStoryById}
       />
-      <div className="flex flex-1 px-2">
-        <StoryViewer
-          story={activeStory}
-          progress={playbackProgress}
-          isPaused={isPlaybackPaused}
-          activeIndex={activeIndex}
-          totalStories={totalStories}
-          onNavigatePrevious={goToPrevious}
-          onNavigateNext={goToNext}
-          onHoldStart={handleManualPauseStart}
-          onHoldEnd={handleManualPauseEnd}
-          onStoryReady={handleStoryReady}
-        />
-      </div>
+      {isViewerOpen ? (
+        <div className="flex flex-1 px-2">
+          <StoryViewer
+            story={activeStory}
+            progress={playbackProgress}
+            isPaused={isPlaybackPaused}
+            activeIndex={activeIndex}
+            totalStories={totalStories}
+            onNavigatePrevious={goToPrevious}
+            onNavigateNext={goToNext}
+            onHoldStart={handleManualPauseStart}
+            onHoldEnd={handleManualPauseEnd}
+            onStoryReady={handleStoryReady}
+          />
+        </div>
+      ) : null}
     </section>
   );
 }
