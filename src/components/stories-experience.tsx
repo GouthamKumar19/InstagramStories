@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+type CurrentUser = {
+  id: string;
+  name: string;
+  avatarUrl: string;
+};
+
 import type { Story } from "@/data/stories";
 import { StoryRail } from "@/components/story-rail";
 import { StoryViewer } from "@/components/story-viewer";
@@ -14,6 +20,14 @@ const PLAYBACK_DURATION_MS = 5_000;
 
 export function StoriesExperience({ stories }: StoriesExperienceProps) {
   const availableStories = useMemo(() => stories ?? [], [stories]);
+  const currentUser = useMemo<CurrentUser>(
+    () => ({
+      id: "you",
+      name: "Your Story",
+      avatarUrl: "https://images.unsplash.com/photo-1544723795-3fb6469f5b39",
+    }),
+    [],
+  );
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
@@ -124,6 +138,7 @@ export function StoriesExperience({ stories }: StoriesExperienceProps) {
   return (
     <section className="flex flex-col gap-6">
       <StoryRail
+        currentUser={currentUser}
         stories={availableStories}
         activeStoryId={activeStory?.id}
         onStorySelect={selectStoryById}
