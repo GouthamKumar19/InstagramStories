@@ -5,15 +5,15 @@ import type { KeyboardEvent } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import type { Story } from "@/data/stories";
+import type { Story, StorySlide } from "@/data/stories";
 import { cn } from "@/lib/utils";
 
 export type StoryViewerProps = {
   story: Story | null;
+  slide: StorySlide | null;
+  slideIndex: number;
   progress: number;
   isPaused: boolean;
-  activeIndex: number;
-  totalStories: number;
   onNavigatePrevious: () => void;
   onNavigateNext: () => void;
   onHoldStart?: () => void;
@@ -30,10 +30,10 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
 
 export function StoryViewer({
   story,
+  slide,
+  slideIndex,
   progress,
   isPaused,
-  activeIndex,
-  totalStories,
   onNavigatePrevious,
   onNavigateNext,
   onHoldStart,
@@ -46,7 +46,7 @@ export function StoryViewer({
   useEffect(() => {
     setIsImageLoaded(false);
     setShowInstructions(true);
-  }, [story?.id]);
+  }, [story?.id, slide?.id]);
 
   useEffect(() => {
     if (!isImageLoaded) return;
@@ -60,12 +60,20 @@ export function StoryViewer({
     return Math.min(1, Math.max(0, progress));
   }, [progress]);
 
-  const segments = useMemo(
-    () => Array.from({ length: totalStories }, (_, index) => index),
-    [totalStories],
-  );
+  const segments = useMemo(() => {
+    if (!story) {
+      return [] as Array<{ id: string | number }>;
+    }
 
-  if (!story) {
+    const slides = story.slides ?? [];
+    if (slides.length === 0) {
+      return [{ id: `${story.id}-placeholder` }];
+    }
+
+    return slides;
+  }, [story]);
+
+  if (!story || !slide) {
     return (
       <div className="flex flex-1 items-center justify-center rounded-[2rem] border border-dashed border-border/60 bg-muted/40 p-6 text-center text-sm text-muted-foreground">
         Select a story to preview it here.
@@ -115,8 +123,10 @@ export function StoryViewer({
   };
 
   const segmentProgress = (index: number) => {
-    if (index < activeIndex) return 1;
-    if (index > activeIndex) return 0;
+    if (segments.length === 0) return 0;
+    const currentIndex = Math.min(slideIndex, segments.length - 1);
+    if (index < currentIndex) return 1;
+    if (index > currentIndex) return 0;
     return clampedProgress;
   };
 
@@ -130,11 +140,11 @@ export function StoryViewer({
       onKeyUp={handleKeyUp}
     >
       <Image
-        key={story.id}
-        src={story.image.url}
-        alt={story.image.alt}
+        key={slide.id}
+        src={slide.image.url}
+        alt={slide.image.alt}
         fill
-        priority={activeIndex === 0}
+        priority={slideIndex === 0}
         sizes="(max-width: 768px) 100vw, 480px"
         className={cn(
           "object-cover opacity-0 transition-opacity duration-500 ease-out motion-reduce:opacity-100 motion-reduce:transition-none",
@@ -154,12 +164,12 @@ export function StoryViewer({
 
       <div className="absolute inset-x-0 top-0 flex flex-col gap-3 px-6 py-5 text-white">
         <div className="flex items-center gap-2" aria-live="polite" aria-label="Story progress">
-          {segments.map((index) => (
-            <div key={`${story.id}-${index}`} className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/15">
+          {segments.map((segment, index) => (
+            <div key={"id" in segment ? segment.id : `${story.id}-${index}`} className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/15">
               <div
                 className={cn(
                   "h-full bg-white transition-[width,opacity] duration-200 ease-out",
-                  isPaused && index === activeIndex && "opacity-60"
+                  isPaused && index === slideIndex && "opacity-60"
                 )}
                 style={{ width: `${segmentProgress(index) * 100}%` }}
               />

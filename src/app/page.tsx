@@ -8,7 +8,7 @@ const feedPosts: FeedPost[] = [
     author: {
       name: "Maya Chen",
       username: "maya.chen",
-      avatarUrl: "https://images.unsplash.com/profile-1553054055914-708ba9b55202image",
+      avatarUrl: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=60",
     },
     image: {
       url: "https://images.unsplash.com/photo-1504898770365-14faca6a7320",
@@ -25,7 +25,7 @@ const feedPosts: FeedPost[] = [
     author: {
       name: "Leo Martínez",
       username: "leo.draws",
-      avatarUrl: "https://images.unsplash.com/profile-1553169064184-764bc5fb49bcimage",
+      avatarUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=60",
     },
     image: {
       url: "https://images.unsplash.com/photo-1503602642458-232111445657",
@@ -42,7 +42,7 @@ const feedPosts: FeedPost[] = [
     author: {
       name: "Sofia Reyes",
       username: "sofia.reyes",
-      avatarUrl: "https://images.unsplash.com/profile-1636987158868-22b1cce0d881image",
+      avatarUrl: "https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=200&q=60",
     },
     image: {
       url: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e",
@@ -73,7 +73,7 @@ export default async function HomePage() {
         </header>
 
         <section className="flex flex-col gap-4">
-          <div className="flex items-center justify-between px-6">
+          {/* <div className="flex items-center justify-between px-6">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Stories
             </h2>
@@ -83,7 +83,7 @@ export default async function HomePage() {
             >
               Watch all
             </button>
-          </div>
+          </div> */}
           <StoriesExperience stories={stories} />
         </section>
 

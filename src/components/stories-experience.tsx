@@ -25,7 +25,7 @@ export function StoriesExperience({ stories }: StoriesExperienceProps) {
     () => ({
       id: "you",
       name: "Your Story",
-      avatarUrl: "https://images.unsplash.com/photo-1544723795-3fb6469f5b39",
+      avatarUrl: "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=200&q=60",
     }),
     [],
   );
@@ -35,6 +35,8 @@ export function StoriesExperience({ stories }: StoriesExperienceProps) {
   const [isManualPause, setIsManualPause] = useState(false);
   const [isStoryReady, setIsStoryReady] = useState(false);
   const [playbackProgress, setPlaybackProgress] = useState(0);
+  const [seenStoryIds, setSeenStoryIds] = useState<string[]>([]);
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
   const progressSnapshotRef = useRef(0);
 
@@ -44,6 +46,10 @@ export function StoriesExperience({ stories }: StoriesExperienceProps) {
     () => availableStories[activeIndex] ?? null,
     [availableStories, activeIndex],
   );
+
+  const totalSlides = activeStory?.slides.length ?? 0;
+  const activeSlide = totalSlides > 0 ? activeStory?.slides[activeSlideIndex] ?? null : null;
+  const isOnLastSlide = totalSlides > 0 && activeSlideIndex >= totalSlides - 1;
 
   useEffect(() => {
     progressSnapshotRef.current = playbackProgress;
@@ -64,21 +70,35 @@ export function StoriesExperience({ stories }: StoriesExperienceProps) {
     progressSnapshotRef.current = 0;
     setPlaybackProgress(0);
     setIsStoryReady(false);
-  }, [activeIndex]);
+  }, [activeIndex, activeSlideIndex]);
+
+  const markActiveStoryAsSeen = useCallback(() => {
+    const currentStoryId = availableStories[activeIndex]?.id;
+    if (!currentStoryId) return;
+
+    setSeenStoryIds((prev) =>
+      prev.includes(currentStoryId) ? prev : [...prev, currentStoryId],
+    );
+  }, [activeIndex, availableStories]);
 
   const selectStoryById = useCallback(
     (storyId: string) => {
       const index = availableStories.findIndex((story) => story.id === storyId);
       if (index === -1) return;
 
+      if (isViewerOpen && isOnLastSlide) {
+        markActiveStoryAsSeen();
+      }
+
       progressSnapshotRef.current = 0;
       setPlaybackProgress(0);
       setIsStoryReady(false);
       setIsManualPause(false);
       setActiveIndex(index);
+      setActiveSlideIndex(0);
       setIsViewerOpen(true);
     },
-    [availableStories],
+    [availableStories, isOnLastSlide, isViewerOpen, markActiveStoryAsSeen],
   );
 
   const goToNext = useCallback(() => {
@@ -86,16 +106,36 @@ export function StoriesExperience({ stories }: StoriesExperienceProps) {
     progressSnapshotRef.current = 0;
     setPlaybackProgress(0);
     setIsStoryReady(false);
+
+    if (totalSlides > 0 && activeSlideIndex < totalSlides - 1) {
+      setActiveSlideIndex((prev) => prev + 1);
+      return;
+    }
+
+    markActiveStoryAsSeen();
+    setActiveSlideIndex(0);
     setActiveIndex((prev) => (prev + 1) % totalStories);
-  }, [totalStories]);
+  }, [activeSlideIndex, markActiveStoryAsSeen, totalSlides, totalStories]);
 
   const goToPrevious = useCallback(() => {
     if (totalStories === 0) return;
     progressSnapshotRef.current = 0;
     setPlaybackProgress(0);
     setIsStoryReady(false);
-    setActiveIndex((prev) => (prev - 1 + totalStories) % totalStories);
-  }, [totalStories]);
+
+    if (activeSlideIndex > 0) {
+      setActiveSlideIndex((prev) => prev - 1);
+      return;
+    }
+
+    setActiveIndex((prev) => {
+      const nextIndex = (prev - 1 + totalStories) % totalStories;
+      const nextStory = availableStories[nextIndex];
+      const nextSlides = nextStory?.slides ?? [];
+      setActiveSlideIndex(Math.max(nextSlides.length - 1, 0));
+      return nextIndex;
+    });
+  }, [activeSlideIndex, availableStories, totalStories]);
 
   const handleStoryReady = useCallback(() => {
     setIsStoryReady(true);
@@ -116,16 +156,18 @@ export function StoriesExperience({ stories }: StoriesExperienceProps) {
     if (!isViewerOpen) return;
     if (isPlaybackPaused) return;
 
+    const playbackDuration = activeSlide?.durationMs ?? PLAYBACK_DURATION_MS;
+
     let animationFrame = 0;
     let startTime: number | null = null;
 
     const step = (timestamp: number) => {
       if (startTime === null) {
-        startTime = timestamp - progressSnapshotRef.current * PLAYBACK_DURATION_MS;
+        startTime = timestamp - progressSnapshotRef.current * playbackDuration;
       }
 
       const elapsed = timestamp - startTime;
-      const nextProgress = Math.min(elapsed / PLAYBACK_DURATION_MS, 1);
+      const nextProgress = Math.min(elapsed / playbackDuration, 1);
 
       setPlaybackProgress(nextProgress);
 
@@ -144,15 +186,18 @@ export function StoriesExperience({ stories }: StoriesExperienceProps) {
         cancelAnimationFrame(animationFrame);
       }
     };
-  }, [goToNext, isPlaybackPaused, totalStories, activeIndex, isViewerOpen]);
+  }, [activeSlide?.durationMs, goToNext, isPlaybackPaused, totalStories, activeIndex, isViewerOpen]);
 
   const handleCloseViewer = useCallback(() => {
+    if (isOnLastSlide) {
+      markActiveStoryAsSeen();
+    }
     setIsViewerOpen(false);
     setIsManualPause(false);
     setIsStoryReady(false);
     progressSnapshotRef.current = 0;
     setPlaybackProgress(0);
-  }, []);
+  }, [isOnLastSlide, markActiveStoryAsSeen]);
 
   useEffect(() => {
     if (!isViewerOpen) return;
@@ -183,12 +228,13 @@ export function StoriesExperience({ stories }: StoriesExperienceProps) {
   return (
     <>
       <section className="flex flex-col gap-6">
-        <StoryRail
-          currentUser={currentUser}
-          stories={availableStories}
-          activeStoryId={activeStory?.id}
-          onStorySelect={selectStoryById}
-        />
+      <StoryRail
+        currentUser={currentUser}
+        stories={availableStories}
+        activeStoryId={activeStory?.id}
+        seenStoryIds={seenStoryIds}
+        onStorySelect={selectStoryById}
+      />
       </section>
       {isViewerOpen ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center px-4 py-8">
@@ -206,17 +252,17 @@ export function StoriesExperience({ stories }: StoriesExperienceProps) {
             <X className="h-5 w-5" aria-hidden />
           </button>
           <div className="relative z-40 flex w-full max-w-sm flex-col">
-            <StoryViewer
-              story={activeStory}
-              progress={playbackProgress}
-              isPaused={isPlaybackPaused}
-              activeIndex={activeIndex}
-              totalStories={totalStories}
-              onNavigatePrevious={goToPrevious}
-              onNavigateNext={goToNext}
-              onHoldStart={handleManualPauseStart}
-              onHoldEnd={handleManualPauseEnd}
-              onStoryReady={handleStoryReady}
+          <StoryViewer
+            story={activeStory}
+            slide={activeSlide}
+            slideIndex={activeSlideIndex}
+            progress={playbackProgress}
+            isPaused={isPlaybackPaused}
+            onNavigatePrevious={goToPrevious}
+            onNavigateNext={goToNext}
+            onHoldStart={handleManualPauseStart}
+            onHoldEnd={handleManualPauseEnd}
+            onStoryReady={handleStoryReady}
             />
           </div>
         </div>
