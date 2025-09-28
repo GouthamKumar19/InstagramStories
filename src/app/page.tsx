@@ -1,10 +1,8 @@
 import { getStories } from "@/data/stories";
-import { StoryRail } from "@/components/story-rail";
-import { StoryViewer } from "@/components/story-viewer";
+import { StoriesExperience } from "@/components/stories-experience";
 
 export default async function HomePage() {
   const stories = await getStories();
-  const featuredStory = stories[0] ?? null;
 
   return (
     <main className="flex min-h-dvh bg-gradient-to-b from-background to-background/60 text-foreground">
@@ -25,10 +23,7 @@ export default async function HomePage() {
             New
           </button>
         </header>
-        <StoryRail stories={stories} activeStoryId={featuredStory?.id} />
-        <div className="flex flex-1 px-2">
-          <StoryViewer story={featuredStory} />
-        </div>
+        <StoriesExperience stories={stories} />
       </div>
     </main>
   );
